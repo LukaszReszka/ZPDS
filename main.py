@@ -8,7 +8,7 @@ with st.sidebar:
     st.divider()
     st.header("Filters")
     min_abv, max_abv = st.slider(
-        "ABV - Alcohol by volume [%]", value=(0, 10), max_value=10
+        "ABV - Alcohol by volume", value=(0, 10), max_value=10, format='%d%%'
     )
     beer_types = st.multiselect(
         "Beer Types",
