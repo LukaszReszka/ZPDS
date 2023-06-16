@@ -61,9 +61,6 @@ def get_filtered_df(df, min_abv, max_abv, types, breweries, min_overall, max_ove
 
 
 st.title("🍻 Beerify")
-st.header("Recommended for you :)")
-
-
 st.header("All beers")
 edited_df = st.data_editor(
     get_filtered_df(
@@ -136,7 +133,7 @@ for hmm in dict(d):
     s += f"{hmm.replace(' ','').replace('/','').replace('-','')}={d[hmm]},"
 
 if s[:-1]:
-    api_request = f"https://e3bb-104-154-24-77.ngrok-free.app/index/{s[:-1]}"
+    api_request = f"https://e3bb-104-154-24-77.ngrok-free.app/index/{s[:-1]}?k={10}"
     response = rq.get(api_request)
     print(response.json())
 
