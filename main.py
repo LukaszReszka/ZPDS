@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import requests as rq
 
 st.set_page_config(page_title="Beerify", page_icon="🍻", layout="wide")
@@ -10,9 +9,9 @@ beer_df = pd.read_csv("assets/beers_clean_lean.csv")
 
 @st.cache_data
 def get_categories(df):
-    beer_type = list(beer_df["beer_type"].unique()) + ["All"]
+    beer_type = list(df["beer_type"].unique()) + ["All"]
     beer_type.sort()
-    breweries = list(beer_df["brewery"].unique()) + ["All"]
+    breweries = list(df["brewery"].unique()) + ["All"]
     breweries.sort()
     return beer_type, breweries
 
@@ -59,6 +58,8 @@ def get_filtered_df(df, min_abv, max_abv, types, breweries, min_overall, max_ove
 
     if "All" not in breweries:
         df = df.loc[df["brewery"].isin(breweries)]
+
+    df.drop_duplicates(subset=['beer_name'], inplace=True)
 
     return df
 
@@ -124,7 +125,6 @@ d = (
     .value_counts()
 )
 d = d / d.sum()
-print(dict(d))
 s = ""
 for hmm in dict(d):
     s += f"{hmm.replace(' ','').replace('/','').replace('-','')}={d[hmm]},"
@@ -156,7 +156,7 @@ if response:
             "brewery": st.column_config.TextColumn(
                 "Brewery", max_chars=100, disabled=True
             ),
-            "abv": st.column_config.NumberColumn("ABV", format="%f%%", disabled=True),
+            "abv": st.column_config.TextColumn("ABV", disabled=True),
             "beer_type": st.column_config.TextColumn(
                 "Beer Type", max_chars=100, disabled=True
             ),
