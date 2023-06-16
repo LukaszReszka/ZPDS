@@ -45,21 +45,30 @@ with st.sidebar:
         default="All",
         key="countries",
     )
-    # if st.button("Filter", type="primary"):
-    #     pass  # refresh beer view
 
 @st.cache_data
-def filtered_df(df):
+def filtered_df(df, min_abv, max_abv, types, breweries, countries):
     df['abv'] = df['abv'].apply(lambda x: float(x[:-1]))
     df['calories'] = df['calories'].apply(lambda x: x.rstrip("cal per 355ml"))
     df['calories'] = df['calories'].apply(lambda x: float(x) if x else None)
     df['favourite'] = False
+
+    df = df.loc[(df['abv'] >= min_abv) & (df['abv'] <= max_abv)]  
+    if 'All' not in types:
+       df = df.loc[df['beer_type'].isin(types)] 
+
+    if 'All' not in breweries:
+        df = df.loc[df['brewery'].isin(breweries)]
+
+    if 'All' not in countries:
+        df = df.loc[df['country'].isin(countries)] 
+
     return df
 
 
 st.title("🍻 Beerify")
 st.data_editor(
-    filtered_df(beer_df),
+    filtered_df(beer_df, st.session_state['abv'][0], st.session_state['abv'][1], st.session_state['beer_types'], st.session_state['breweries'], st.session_state['countries']),
     use_container_width=True,
     hide_index=True,
     height=720,
