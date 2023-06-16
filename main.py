@@ -74,7 +74,7 @@ edited_df = st.data_editor(
 ),
     use_container_width=True,
     hide_index=True,
-    height=720,
+    height=500,
     column_config={
         "beer_name": st.column_config.TextColumn("Beer", max_chars=100, disabled=True),
         "Unnamed: 0": None,
@@ -133,7 +133,7 @@ for hmm in dict(d):
     s += f"{hmm.replace(' ','').replace('/','').replace('-','')}={d[hmm]},"
 
 if s[:-1]:
-    api_request = f"https://e3bb-104-154-24-77.ngrok-free.app/index/{s[:-1]}?k={10}"
+    api_request = f" https://3b63-104-154-24-77.ngrok-free.app/index/{s[:-1]}?k={10}"
     response = rq.get(api_request)
     print(response.json())
 
