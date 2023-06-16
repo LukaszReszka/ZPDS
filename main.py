@@ -1,40 +1,55 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 
 st.set_page_config(page_title="Beerify", page_icon="🍻", layout="wide")
 
+beer_df = pd.read_csv("assets/clean.csv")
+
+@st.cache_data
+def get_categories(df):
+    beer_type = list(beer_df["beer_type"].unique()) + ["All"]
+    beer_type.sort()
+    breweries = list(beer_df["brewery"].unique()) + ["All"]
+    breweries.sort()
+    countries = list(beer_df["country"].unique()) + ["All"]
+    countries.remove(np.nan)
+    countries.sort()
+    return beer_type, breweries, countries
+
+beers, breweries, countries = get_categories(beer_df)
+
 with st.sidebar:
-    st.image("assets\logo.png", width=256)
+    st.image("assets/logo.png", width=256)
     st.title("🍻 Beerify")
     st.divider()
     st.header("Filters")
     st.slider(
-        "ABV - Alcohol by volume", value=(0, 10), max_value=10, format="%d%%", key="abv"
+        "ABV - Alcohol by volume", value=(0, 25), max_value=25, format="%d%%", key="abv"
     )
     st.multiselect(
         "Beer Types",
-        options=["All", "Pilsner", "Pale Lager", "IPA - White", "Stout - Imperial"],
+        options=beers,
         default="All",
         key="beer_types",
     )
     st.multiselect(
         "Breweries",
-        options=["All", "Browar Sady", "Browar Fortuna", "Browar Bojanowo"],
+        options=breweries,
         default="All",
         key="breweries",
     )
     st.multiselect(
         "Countries",
-        options=["All", "Poland", "Germany", "Czechia"],
+        options=countries,
         default="All",
         key="countries",
     )
-    if st.button("Filter", type="primary"):
-        pass  # refresh beer view
+    # if st.button("Filter", type="primary"):
+    #     pass  # refresh beer view
 
-
-def filtered_df():
-    df = pd.read_csv("assets/clean.csv")
+@st.cache_data
+def filtered_df(df):
     df['abv'] = df['abv'].apply(lambda x: float(x[:-1]))
     df['calories'] = df['calories'].apply(lambda x: x.rstrip("cal per 355ml"))
     df['calories'] = df['calories'].apply(lambda x: float(x) if x else None)
@@ -44,7 +59,7 @@ def filtered_df():
 
 st.title("🍻 Beerify")
 st.data_editor(
-    filtered_df(),
+    filtered_df(beer_df),
     use_container_width=True,
     hide_index=True,
     height=720,
