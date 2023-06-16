@@ -1,10 +1,12 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import requests as rq
 
 st.set_page_config(page_title="Beerify", page_icon="🍻", layout="wide")
 
 beer_df = pd.read_csv("assets/clean.csv")
+
 
 @st.cache_data
 def get_categories(df):
@@ -16,6 +18,7 @@ def get_categories(df):
     countries.remove(np.nan)
     countries.sort()
     return beer_type, breweries, countries
+
 
 beers, breweries, countries = get_categories(beer_df)
 
@@ -46,29 +49,41 @@ with st.sidebar:
         key="countries",
     )
 
+
 @st.cache_data
-def filtered_df(df, min_abv, max_abv, types, breweries, countries):
-    df['abv'] = df['abv'].apply(lambda x: float(x[:-1]))
-    df['calories'] = df['calories'].apply(lambda x: x.rstrip("cal per 355ml"))
-    df['calories'] = df['calories'].apply(lambda x: float(x) if x else None)
-    df['favourite'] = False
+def get_filtered_df(df, min_abv, max_abv, types, breweries, countries):
+    df["abv"] = df["abv"].apply(lambda x: float(x[:-1]))
+    df["calories"] = df["calories"].apply(lambda x: x.rstrip("cal per 355ml"))
+    df["calories"] = df["calories"].apply(lambda x: float(x) if x else None)
+    df["favourite"] = False
 
-    df = df.loc[(df['abv'] >= min_abv) & (df['abv'] <= max_abv)]  
-    if 'All' not in types:
-       df = df.loc[df['beer_type'].isin(types)] 
+    df = df.loc[(df["abv"] >= min_abv) & (df["abv"] <= max_abv)]
+    if "All" not in types:
+        df = df.loc[df["beer_type"].isin(types)]
 
-    if 'All' not in breweries:
-        df = df.loc[df['brewery'].isin(breweries)]
+    if "All" not in breweries:
+        df = df.loc[df["brewery"].isin(breweries)]
 
-    if 'All' not in countries:
-        df = df.loc[df['country'].isin(countries)] 
+    if "All" not in countries:
+        df = df.loc[df["country"].isin(countries)]
 
     return df
 
 
 st.title("🍻 Beerify")
-st.data_editor(
-    filtered_df(beer_df, st.session_state['abv'][0], st.session_state['abv'][1], st.session_state['beer_types'], st.session_state['breweries'], st.session_state['countries']),
+st.header("Recommended for you :)")
+
+
+st.header("All beers")
+edited_df = st.data_editor(
+    get_filtered_df(
+    beer_df,
+    st.session_state["abv"][0],
+    st.session_state["abv"][1],
+    st.session_state["beer_types"],
+    st.session_state["breweries"],
+    st.session_state["countries"],
+),
     use_container_width=True,
     hide_index=True,
     height=720,
@@ -77,22 +92,65 @@ st.data_editor(
         "Unnamed: 0": None,
         "brewery": st.column_config.TextColumn("Brewery", max_chars=100, disabled=True),
         "abv": st.column_config.NumberColumn("ABV", format="%f%%", disabled=True),
-        "beer_type": st.column_config.TextColumn("Beer Type", max_chars=100, disabled=True),
+        "beer_type": st.column_config.TextColumn(
+            "Beer Type", max_chars=100, disabled=True
+        ),
         "country": st.column_config.TextColumn("Country", max_chars=50, disabled=True),
         "city": st.column_config.TextColumn("City", max_chars=50, disabled=True),
         "land": st.column_config.TextColumn("Land", max_chars=50, disabled=True),
         "style_score": st.column_config.NumberColumn("Style Score", disabled=True),
         "overall_score": st.column_config.NumberColumn("Overall Score", disabled=True),
-        "calories": st.column_config.NumberColumn("Calories per 355 ml",format="%d cal", disabled=True),
-        "average_rating": st.column_config.NumberColumn("Average Rating", disabled=True),
-        "review_average": st.column_config.NumberColumn("Average Review", disabled=True),
-        "weighted_average": st.column_config.NumberColumn("Weighted Average", disabled=True),
-        "description": st.column_config.TextColumn("Description", max_chars=100, disabled=True),
-        "served_in": st.column_config.TextColumn("Best served in", max_chars=50, disabled=True),
-        "favourite": st.column_config.CheckboxColumn("Favourite?", default=False)
+        "calories": st.column_config.NumberColumn(
+            "Calories per 355 ml", format="%d cal", disabled=True
+        ),
+        "average_rating": st.column_config.NumberColumn(
+            "Average Rating", disabled=True
+        ),
+        "review_average": st.column_config.NumberColumn(
+            "Average Review", disabled=True
+        ),
+        "weighted_average": st.column_config.NumberColumn(
+            "Weighted Average", disabled=True
+        ),
+        "description": st.column_config.TextColumn(
+            "Description", max_chars=100, disabled=True
+        ),
+        "served_in": st.column_config.TextColumn(
+            "Best served in", max_chars=50, disabled=True
+        ),
+        "favourite": st.column_config.CheckboxColumn("Favourite?", default=False),
     },
-    column_order=("favourite", "beer_name", "beer_type", "abv", "overall_score", "description", "served_in", "calories", "brewery", "country", "land", "city", "style_score", "average_rating", "review_average", "weighted_average")
+    column_order=(
+        "favourite",
+        "beer_name",
+        "beer_type",
+        "abv",
+        "overall_score",
+        "description",
+        "served_in",
+        "calories",
+        "brewery",
+        "country",
+        "land",
+        "city",
+        "style_score",
+        "average_rating",
+        "review_average",
+        "weighted_average",
+    ),
 )
+
+d = edited_df[edited_df['favourite'] == True]['beer_type'].apply(lambda s: s.split(' - ')[0]).value_counts()
+d = d / d.sum()
+print(dict(d))
+s = ""
+for hmm in dict(d):
+    s += f"{hmm.replace(' ','').replace('/','').replace('-','')}={d[hmm]},"
+
+if s[:-1]:
+    api_request = f"https://e3bb-104-154-24-77.ngrok-free.app/index/{s[:-1]}"
+    response = rq.get(api_request)
+    print(response.json())
 
 st.markdown(
     """ <style>
